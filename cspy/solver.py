@@ -10,6 +10,7 @@ Options for solver algorithms:
 
 import copy
 import itertools
+from cspy.utils import timed, merge_dicts
 
 
 class Solver(object):
@@ -23,6 +24,7 @@ class Solver(object):
             'min_conflicts': self.min_conflicts,
         }
 
+    @timed('The search')
     def solve(self, algorithm='backtracking', take_first=True):
         """Finds solutions to the solver's assigned CSP.
         If TAKE_FIRST is True, returns the first observed solution that is both optimal and valid.
@@ -71,7 +73,6 @@ class Solver(object):
         solution = _recursive_backtracking(_csp)
         return solution if take_first else solutions
 
-
     @staticmethod
     def select_unassigned_var(var_list):
         """Choose the unassigned variable from VAR_LIST with the fewest values remaining in its domain."""
@@ -107,7 +108,7 @@ class Solver(object):
                         if remaining_vars:
                             for remaining_values in itertools.product(*[list(_v.domain) for _v in remaining_vars]):
                                 undo_remaining_assign = self.make_assignment(remaining_vars, remaining_values)
-                                assignment = self.merge_dicts(
+                                assignment = merge_dicts(
                                     partial_assignment, dict([(_v.name, _v) for _v in remaining_vars]))
                                 arg_list = [assignment[name] for name in constraint.var_names]
                                 if constraint.satisfied(*arg_list):
@@ -141,13 +142,6 @@ class Solver(object):
                 var.value = value
                 var.domain = {value} if var.value is not None else domain
         return modified_vars, previous_values, previous_domains
-
-    @staticmethod
-    def merge_dicts(*args):
-        z = args[0].copy()  # start with the first dictionary's keys and values
-        for y in args[1:]:
-            z.update(y)  # modifies z with y's keys and values & returns None
-        return z
 
     @staticmethod
     def consistent(var_name, csp):
