@@ -7,6 +7,7 @@ Represents the constraint satisfaction problem (CSP) interface.
 Full import: `from cspy import Variable, Constraint, CSP`
 """
 
+import pprint
 from cspy.solver import Solver
 
 
@@ -150,3 +151,9 @@ class CSP(object):
         If no objective function exists, this will return all valid solutions.
         """
         return Solver(self).solve(algorithm=algorithm, take_first=False)
+
+    def all_variables_assigned(self):
+        return all(var.value is not None for var in self.var_list)
+
+    def print_current_assignment(self):
+        pprint.pprint({var.name: var.value for var in self.var_list if var.value is not None})
