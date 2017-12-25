@@ -7,6 +7,7 @@ Sudoku solver (`CSPy` usage example).
 Solves https://github.com/ohjay/cspy/blob/master/examples/sudoku.png.
 """
 
+import itertools
 from cspy import Variable, Constraint, CSP
 from cspy.utils import merge_dicts
 
@@ -71,12 +72,18 @@ if __name__ == '__main__':
     for row_positions, fixed in by_row:
         satisfied = (lambda fixed: lambda *args: contains_all(fixed + values(args)))(fixed)
         csp.add_constraint(Constraint(row_positions, satisfied))
+        for names in itertools.combinations(row_positions, 2):
+            csp.add_constraint(Constraint(names, lambda v0, v1: v0.value != v1.value))
     for col_positions, fixed in by_col:
         satisfied = (lambda fixed: lambda *args: contains_all(fixed + values(args)))(fixed)
         csp.add_constraint(Constraint(col_positions, satisfied))
+        for names in itertools.combinations(col_positions, 2):
+            csp.add_constraint(Constraint(names, lambda v0, v1: v0.value != v1.value))
     for box_positions, fixed in by_box:
         satisfied = (lambda fixed: lambda *args: contains_all(fixed + values(args)))(fixed)
         csp.add_constraint(Constraint(box_positions, satisfied))
+        for names in itertools.combinations(box_positions, 2):
+            csp.add_constraint(Constraint(names, lambda v0, v1: v0.value != v1.value))
     solution = csp.get_solution(algorithm='backtracking')
     if solution is None:
         solution = {}

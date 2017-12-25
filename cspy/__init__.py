@@ -147,19 +147,19 @@ class CSP(object):
         and return a scalar representing the quantity to be maximized."""
         self.objective_fn = objective_fn
 
-    def get_solution(self, algorithm='backtracking'):
+    def get_solution(self, algorithm='backtracking', **kwargs):
         """Returns the optimal solution as defined by the constraints and the objective function.
         If no objective function exists, returns an arbitrary valid solution.
         If no solution exists (i.e. the feasible set is empty), returns None.
         """
-        return Solver(self).solve(algorithm=algorithm, take_first=True)
+        return Solver(self).solve(algorithm=algorithm, take_first=True, **kwargs)
 
-    def get_all_solutions(self, algorithm='backtracking'):
+    def get_all_solutions(self, algorithm='backtracking', **kwargs):
         """Returns all solutions to the CSP.
         If an objective function exists, this will return all optimal solutions.
         If no objective function exists, this will return all valid solutions.
         """
-        return Solver(self).solve(algorithm=algorithm, take_first=False)
+        return Solver(self).solve(algorithm=algorithm, take_first=False, **kwargs)
 
     def all_variables_assigned(self):
         return all(var.value is not None for var in self.var_list)

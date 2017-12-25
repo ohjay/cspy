@@ -28,13 +28,13 @@ class Solver(object):
         }
 
     @timed('The search')
-    def solve(self, algorithm='backtracking', take_first=True):
+    def solve(self, algorithm='backtracking', take_first=True, **kwargs):
         """Finds solutions to the solver's assigned CSP.
         If TAKE_FIRST is True, returns the first observed solution that is both optimal and valid.
         Otherwise, returns the set of all solutions.
         """
         try:
-            return self.ALGORITHMS[algorithm](take_first)
+            return self.ALGORITHMS[algorithm](take_first, **kwargs)
         except KeyError:
             raise NotImplementedError('algorithm %r not supported!' % algorithm)
 
@@ -197,13 +197,13 @@ class Solver(object):
     # MIN CONFLICTS #
     #################
 
-    def min_conflicts(self, take_first=True, iter_limit=1e9, progress_freq=1e4):
+    def min_conflicts(self, take_first=True, iter_limit=1e9, progress_freq=1e4, uniqueness=False):
         """Local search / iterative improvement.
         Solves the CSP given by `self.csp`.
         """
         _csp = copy.deepcopy(self.csp)
         solutions = []
-        self.make_random_assignment(_csp)
+        self.make_random_assignment(_csp, uniqueness)
         i = 0
         while i < iter_limit:
             if _csp.solved():
@@ -215,7 +215,7 @@ class Solver(object):
             # Select variable that violates the most constraints
             mc_var = self.select_most_conflicting_var(_csp)
             # Reset that variable to the value that violates the fewest constraints
-            self.assign_least_conflicting_value(mc_var, _csp)
+            self.assign_least_conflicting_value(mc_var, _csp, uniqueness)
             i += 1
             if progress_freq > 0 and (i + 1) % progress_freq == 0:
                 print('[iteration %s] %d/%d constraints violated'
@@ -223,12 +223,11 @@ class Solver(object):
         return None if take_first else solutions
 
     @staticmethod
-    def make_random_assignment(csp):
+    def make_random_assignment(csp, uniqueness=False):
         """Assigns a random value from each variable's domain to that variable.
         If UNIQUENESS is True, we'll try to make every variable have a different value.
         """
         chosen = set()
-        uniqueness = 'uniqueness' in [c.name for c in csp.constraints]
         for var in csp.var_list:
             choices = set(var.domain) - chosen if uniqueness else var.domain
             if len(choices) == 0:
@@ -252,7 +251,7 @@ class Solver(object):
         return csp.var_dict[mc_var_name]
 
     @staticmethod
-    def assign_least_conflicting_value(var, csp):
+    def assign_least_conflicting_value(var, csp, uniqueness=False):
         """Assign to VAR whichever value violates the fewest constraints.
         Assumes that all of the variables in CSP are initially assigned.
         """
@@ -264,7 +263,6 @@ class Solver(object):
             return Solver.make_assignment([_other_var], [other_value])
         orig_value = var.value
         conflict_count = {}
-        uniqueness = 'uniqueness' in [c.name for c in csp.constraints]
         for value in var.init_domain:
             other_var = next((var for var in csp.var_list if var.value == value), None)
             undo_other_assign = ((), (), ())
