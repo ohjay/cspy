@@ -22,4 +22,4 @@ def uniqueness(var_names):
         if None in values:
             return True  # not qualified to make a decision yet
         return len(values) == len(set(values))
-    return Constraint(var_names, _satisfied)
+    return Constraint(var_names, _satisfied, name='uniqueness')

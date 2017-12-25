@@ -6,10 +6,13 @@ solver.py
 Constraint satisfaction problem (CSP) solver.
 Options for solver algorithms:
 - backtracking
+- min_conflicts
 """
 
 import copy
+import random
 import itertools
+from collections import defaultdict
 from cspy.utils import timed, merge_dicts
 
 
@@ -64,10 +67,12 @@ class Solver(object):
                 if next_value not in next_var.domain:
                     continue
                 undo_assign = self.make_assignment([next_var], [next_value])
+                orig_domains = self.forward_check([next_var], _csp)
                 if self.consistent(next_var.name, _csp):
                     _solution = _recursive_backtracking(_csp)
                     if _solution is not None and take_first:
                         return _solution
+                self.restore_domains(orig_domains, _csp)
                 self.make_assignment(*undo_assign)
 
         solution = _recursive_backtracking(_csp)
@@ -97,7 +102,6 @@ class Solver(object):
                 for other_var in __other_vars:
                     invalid_values = []
                     for other_value in other_var.domain:
-                        other_var.value = other_value
                         undo_partial_assign = self.make_assignment([var, other_var], [value, other_value])
                         partial_assignment = {var.name: var, other_var.name: other_var}
 
@@ -144,6 +148,38 @@ class Solver(object):
         return modified_vars, previous_values, previous_domains
 
     @staticmethod
+    def forward_check(var_list, csp):
+        """Performs a forward check for every variable in VAR_LIST.
+        For each variable X in VAR_LIST,
+        prunes the domains of unassigned variables that share a constraint with X
+        (removing any values that would violate a constraint if assigned).
+
+        Assumes that each variable in VAR_LIST has already been assigned, i.e. `.value` is not None.
+        """
+        orig_domains = {v.name: v.domain for v in csp.var_list}
+        for var in var_list:
+            for constraint in csp.get_constraints_with(var):
+                unassigned_vars = [csp.var_dict[name] for name in constraint.var_names
+                                   if csp.var_dict[name].value is None]
+                if len(unassigned_vars) == 1:
+                    unassigned_var = unassigned_vars[0]
+                    invalid_values = []
+                    for value in unassigned_var.domain:
+                        undo_assign = Solver.make_assignment([unassigned_var], [value])
+                        arg_list = [csp.var_dict[name] for name in constraint.var_names]
+                        if not constraint.satisfied(*arg_list):
+                            invalid_values.append(value)
+                        Solver.make_assignment(*undo_assign)
+                    unassigned_var.domain = [v for v in unassigned_var.domain if v not in invalid_values]
+        return orig_domains
+
+    @staticmethod
+    def restore_domains(domains, csp):
+        """Given a {name: domain} dictionary, restores variable domains to their former glory."""
+        for name, domain in domains.items():
+            csp.var_dict[name].domain = domain
+
+    @staticmethod
     def consistent(var_name, csp):
         """Returns True if the current assignment of the variable VAR_NAME doesn't violate any constraints.
         Assumes that a constraint involving unassigned variables can still be satisfied.
@@ -157,14 +193,96 @@ class Solver(object):
                     return False
         return True
 
-
     #################
     # MIN CONFLICTS #
     #################
 
-    def min_conflicts(self, take_first=True):
+    def min_conflicts(self, take_first=True, iter_limit=1e9, progress_freq=1e4):
         """Local search / iterative improvement.
         Solves the CSP given by `self.csp`.
         """
         _csp = copy.deepcopy(self.csp)
-        # TODO
+        solutions = []
+        self.make_random_assignment(_csp)
+        i = 0
+        while i < iter_limit:
+            if _csp.solved():
+                solution = {var.name: var.value for var in _csp.var_list}
+                if take_first:
+                    return solution
+                else:
+                    solutions.append(solution)
+            # Select variable that violates the most constraints
+            mc_var = self.select_most_conflicting_var(_csp)
+            # Reset that variable to the value that violates the fewest constraints
+            self.assign_least_conflicting_value(mc_var, _csp)
+            i += 1
+            if progress_freq > 0 and (i + 1) % progress_freq == 0:
+                print('[iteration %d] %d/%d constraints violated'
+                      % (i, _csp.num_constraints_violated(), len(_csp.constraints)))
+        return None if take_first else solutions
+
+    @staticmethod
+    def make_random_assignment(csp):
+        """Assigns a random value from each variable's domain to that variable.
+        If UNIQUENESS is True, we'll try to make every variable have a different value.
+        """
+        chosen = set()
+        uniqueness = 'uniqueness' in [c.name for c in csp.constraints]
+        for var in csp.var_list:
+            choices = set(var.domain) - chosen if uniqueness else var.domain
+            if len(choices) == 0:
+                choices = var.domain
+            value = random.choice(tuple(choices))
+            Solver.make_assignment([var], [value])
+            chosen.add(value)
+
+    @staticmethod
+    def select_most_conflicting_var(csp):
+        """Return the variable from CSP that violates the most constraints.
+        Assumes that all of the variables in CSP are initially assigned.
+        """
+        conflict_count = defaultdict(int)
+        for constraint in csp.constraints:
+            if not constraint.satisfied(*[csp.var_dict[name] for name in constraint.var_names]):
+                for name in constraint.var_names:
+                    conflict_count[name] += 1
+        mc_count = max(conflict_count.values())
+        mc_var_name = random.choice([name for name, count in conflict_count.items() if count == mc_count])
+        return csp.var_dict[mc_var_name]
+
+    @staticmethod
+    def assign_least_conflicting_value(var, csp):
+        """Assign to VAR whichever value violates the fewest constraints.
+        Assumes that all of the variables in CSP are initially assigned.
+        """
+        def _assign_unique_value(_other_var):
+            other_domain = _other_var.init_domain - set([_var.value for _var in csp.var_list])
+            if len(other_domain) == 0:
+                other_domain = _other_var.init_domain
+            other_value = random.choice(tuple(other_domain))
+            return Solver.make_assignment([_other_var], [other_value])
+        orig_value = var.value
+        conflict_count = {}
+        uniqueness = 'uniqueness' in [c.name for c in csp.constraints]
+        for value in var.init_domain:
+            other_var = next((var for var in csp.var_list if var.value == value), None)
+            undo_other_assign = ((), (), ())
+            Solver.make_assignment([var], [value])
+            if uniqueness and other_var is not None:
+                # If another variable already has the value VALUE, try to change it
+                undo_other_assign = _assign_unique_value(other_var)
+            conflict_count[value] = 0
+            for constraint in csp.constraints:
+                if not constraint.satisfied(*[csp.var_dict[name] for name in constraint.var_names]):
+                    conflict_count[value] += 1
+            if uniqueness and other_var is not None:
+                Solver.make_assignment(*undo_other_assign)
+        Solver.make_assignment([var], [orig_value])
+        lc_count = min(conflict_count.values())
+        lc_value = random.choice([value for value, count in conflict_count.items() if count == lc_count])
+        other_var = next((var for var in csp.var_list if var.value == lc_value), None)
+        Solver.make_assignment([var], [lc_value])
+        if uniqueness and other_var is not None:
+            _assign_unique_value(other_var)
+        return lc_value

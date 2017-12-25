@@ -7,6 +7,7 @@ Represents the constraint satisfaction problem (CSP) interface.
 Full import: `from cspy import Variable, Constraint, CSP`
 """
 
+import copy
 import pprint
 from cspy.solver import Solver
 
@@ -19,6 +20,7 @@ class Variable(object):
     def __init__(self, name, domain=(), value=None):
         self.name = name
         self.domain = domain
+        self.init_domain = copy.deepcopy(domain)
         self.value = value  # in theory, only the solver should assign this attribute
 
     @staticmethod
@@ -99,13 +101,14 @@ class Constraint(object):
     and (b) a function which takes in the variables associated with those names
     and returns True or False depending on whether or not the constraint has been met.
     """
-    def __init__(self, var_names, satisfied):
+    def __init__(self, var_names, satisfied, name=None):
         try:
             self.var_names = tuple(var_names)  # names of variables involved in the constraint
         except TypeError:
             self.var_names = (var_names,)
             print('WARNING: `var_names` is not a collection; casting it to one automatically')
         self.satisfied = satisfied  # fn: (vars, in order specified by `var_names`) -> True/False
+        self.name = name
 
     def __contains__(self, value):
         """Check whether or not a variable (identified by its name) is involved in the constraint."""
@@ -154,6 +157,36 @@ class CSP(object):
 
     def all_variables_assigned(self):
         return all(var.value is not None for var in self.var_list)
+
+    def get_unassigned_vars(self):
+        return [v for v in self.var_list if v.value is None]
+
+    def get_unassigned_var_names(self):
+        return [v.name for v in self.var_list if v.value is None]
+
+    def get_assigned_vars(self):
+        return [v for v in self.var_list if v.value is not None]
+
+    def get_assigned_var_names(self):
+        return [v.name for v in self.var_list if v.value is not None]
+
+    def get_constraints_with(self, var):
+        """Return all constraints involving VAR."""
+        return [c for c in self.constraints if var.name in c.var_names]
+
+    def solved(self):
+        """Return True if all of the variables have been assigned a value
+        and no constraints are currently being violated. Otherwise return False.
+        """
+        if not self.all_variables_assigned():
+            return False
+        for constraint in self.constraints:
+            if not constraint.satisfied(*[self.var_dict[name] for name in constraint.var_names]):
+                return False
+        return True
+
+    def num_constraints_violated(self):
+        return len([c for c in self.constraints if not c.satisfied(*[self.var_dict[name] for name in c.var_names])])
 
     def print_current_assignment(self):
         pprint.pprint({var.name: var.value for var in self.var_list if var.value is not None})

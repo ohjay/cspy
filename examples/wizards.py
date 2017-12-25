@@ -40,5 +40,5 @@ if __name__ == '__main__':
     for wiz_a, wiz_b, wiz_c in constraints:
         csp.add_constraint(Constraint((wiz_a, wiz_b, wiz_c), lambda a, b, c: c < min(a, b) or c > max(a, b)))
     csp.add_constraint(uniqueness(wizards))
-    solution = csp.get_solution()
+    solution = csp.get_solution(algorithm='min_conflicts')
     print(solution)
