@@ -5,11 +5,14 @@ sudoku.py
 
 Sudoku solver (`CSPy` usage example).
 Solves https://github.com/ohjay/cspy/blob/master/examples/sudoku.png.
+
+From testing different Sudoku formulations, a tip for problem setup:
+avoid many-variable constraints. Keep things pairwise if possible.
 """
 
-import itertools
 from cspy import Variable, Constraint, CSP
 from cspy.utils import merge_dicts
+from cspy.common_constraints import uniqueness, inequality_unary
 
 N = 9
 DOMAIN = tuple(range(1, N + 1))
@@ -70,20 +73,23 @@ if __name__ == '__main__':
                         fixed.append(val)
             by_box.append((box, fixed))
     for row_positions, fixed in by_row:
-        satisfied = (lambda fixed: lambda *args: contains_all(fixed + values(args)))(fixed)
-        csp.add_constraint(Constraint(row_positions, satisfied))
-        for names in itertools.combinations(row_positions, 2):
-            csp.add_constraint(Constraint(names, lambda v0, v1: v0.value != v1.value))
+        for ineq_constraint in uniqueness(row_positions, pairwise=True):
+            csp.add_constraint(ineq_constraint)
+        for name in row_positions:
+            for val in fixed:
+                csp.add_constraint(inequality_unary(name, val))
     for col_positions, fixed in by_col:
-        satisfied = (lambda fixed: lambda *args: contains_all(fixed + values(args)))(fixed)
-        csp.add_constraint(Constraint(col_positions, satisfied))
-        for names in itertools.combinations(col_positions, 2):
-            csp.add_constraint(Constraint(names, lambda v0, v1: v0.value != v1.value))
+        for ineq_constraint in uniqueness(col_positions, pairwise=True):
+            csp.add_constraint(ineq_constraint)
+        for name in col_positions:
+            for val in fixed:
+                csp.add_constraint(inequality_unary(name, val))
     for box_positions, fixed in by_box:
-        satisfied = (lambda fixed: lambda *args: contains_all(fixed + values(args)))(fixed)
-        csp.add_constraint(Constraint(box_positions, satisfied))
-        for names in itertools.combinations(box_positions, 2):
-            csp.add_constraint(Constraint(names, lambda v0, v1: v0.value != v1.value))
+        for ineq_constraint in uniqueness(box_positions, pairwise=True):
+            csp.add_constraint(ineq_constraint)
+        for name in box_positions:
+            for val in fixed:
+                csp.add_constraint(inequality_unary(name, val))
     solution = csp.get_solution(algorithm='backtracking')
     if solution is None:
         solution = {}

@@ -34,3 +34,7 @@ def uniqueness(var_names, pairwise=False):
 def inequality(name0, name1):
     """Creates a Constraint on the two variables which specifies that their values must be different."""
     return Constraint((name0, name1), lambda v0, v1: v0.value != v1.value)
+
+def inequality_unary(name, constant):
+    """Creates a Constraint on one variable which specifies that its value != CONSTANT."""
+    return Constraint((name,), lambda v: v.value != constant)
