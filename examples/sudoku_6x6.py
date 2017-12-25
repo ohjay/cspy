@@ -3,29 +3,35 @@
 """
 sudoku.py
 
-Sudoku solver (`CSPy` usage example).
-Solves https://github.com/ohjay/cspy/blob/master/examples/sudoku.png.
+Basic Sudoku example (solves a 6x6 grid).
+Solves https://upload.wikimedia.org/wikipedia/commons/0/08/Sudoku6x6-sol2.png.
 """
 
 import numpy as np
 from cspy import Variable, Constraint, CSP
 
-N = 9
+N = 6
 DOMAIN = tuple(range(1, N + 1))
 FIXED_VALUES = {
-    (0, 0): 5, (0, 1): 3, (0, 4): 7,
-    (1, 0): 6, (1, 3): 1, (1, 4): 9, (1, 5): 5,
-    (2, 1): 9, (2, 2): 8, (2, 7): 6,
-    (3, 0): 8, (3, 4): 6, (3, 8): 3,
-    (4, 0): 4, (4, 3): 8, (4, 5): 3, (4, 8): 1,
-    (5, 0): 7, (5, 4): 2, (5, 8): 6,
-    (6, 1): 6, (6, 6): 2, (6, 7): 8,
-    (7, 3): 4, (7, 4): 1, (7, 5): 9, (7, 8): 5,
-    (8, 4): 8, (8, 7): 7, (8, 8): 9
+    (0, 0): 2, (0, 5): 3,
+    (1, 1): 1, (1, 3): 2, (1, 5): 4,
+    (2, 0): 1, (2, 3): 3,
+    (3, 2): 6, (3, 5): 1,
+    (4, 0): 4, (4, 2): 1, (4, 4): 3,
+    (5, 0): 3, (5, 5): 2,
 }
 
 def contains_all(iterable):
-    """Returns True if the given iterable contains all of the digits from 1 through N."""
+    """Returns True if the given iterable contains all of the digits from 1 through N.
+    >>> contains_all([1, 2, 3, 4, 5, 6])
+    True
+    >>> contains_all([2, 6, 4, 5, 1, 3])
+    True
+    >>> contains_all([2, 6, 4, 5, 1])
+    False
+    >>> contains_all([3, 5, 2, 4, 0, 1])
+    False
+    """
     return all(d in iterable for d in DOMAIN)
 
 def values(var_list):
@@ -43,10 +49,10 @@ if __name__ == '__main__':
     by_col = [['%d%d' % (r, c) for r in range(N) if (r, c) not in FIXED_VALUES] for c in range(N)]
     by_col = [(_, [val for rc, val in FIXED_VALUES.items() if rc[1] == c]) for c, _ in enumerate(by_col)]
     by_box = []
-    for r in range(0, N, 3):
+    for r in range(0, N, 2):
         for c in range(0, N, 3):
             box, fixed = [], []
-            for i in range(3):
+            for i in range(2):
                 for j in range(3):
                     val = FIXED_VALUES.get((r + i, c + j), None)
                     if val is None:

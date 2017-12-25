@@ -57,8 +57,19 @@ soln = csp.get_solution(algorithm='backtracking')  # which here would return eit
 ### Examples
 #### N-queens
 ```python
-from cspy import *
-# TODO
+import itertools
+from cspy import Variable, Constraint, CSP
+N = 8
+csp = CSP()
+var_names = []
+for i in range(N):
+    var_names.append(str(i))
+    csp.add_variable(Variable(str(i), [(r, c) for r in range(N) for c in range(N)]))
+for names in itertools.combinations(var_names, 2):
+    csp.add_constraint(Constraint(names, lambda v0, v1: v0.value[0] != v1.value[0]))
+    csp.add_constraint(Constraint(names, lambda v0, v1: v0.value[1] != v1.value[1]))
+    csp.add_constraint(Constraint(names, lambda v0, v1: abs(v0.value[0] - v1.value[0]) != abs(v0.value[1] - v1.value[1])))
+soln = csp.get_solution(algorithm='min_conflicts')
 ```
 
 #### Sudoku
