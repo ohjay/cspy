@@ -67,6 +67,3 @@ As a toy example, we will solve [this game](examples/sudoku.png).
 from cspy import *
 # TODO
 ```
-
-### Full Documentation
-coming soon

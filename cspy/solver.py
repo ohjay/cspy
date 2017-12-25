@@ -67,12 +67,12 @@ class Solver(object):
                 if next_value not in next_var.domain:
                     continue
                 undo_assign = self.make_assignment([next_var], [next_value])
-                orig_domains = self.forward_check([next_var], _csp)
                 if self.consistent(next_var.name, _csp):
+                    orig_domains = self.forward_check([next_var], _csp)
                     _solution = _recursive_backtracking(_csp)
                     if _solution is not None and take_first:
                         return _solution
-                self.restore_domains(orig_domains, _csp)
+                    self.restore_domains(orig_domains, _csp)
                 self.make_assignment(*undo_assign)
 
         solution = _recursive_backtracking(_csp)
@@ -218,8 +218,8 @@ class Solver(object):
             self.assign_least_conflicting_value(mc_var, _csp)
             i += 1
             if progress_freq > 0 and (i + 1) % progress_freq == 0:
-                print('[iteration %d] %d/%d constraints violated'
-                      % (i, _csp.num_constraints_violated(), len(_csp.constraints)))
+                print('[iteration %s] %d/%d constraints violated'
+                      % (str(i).rjust(9), _csp.num_constraints_violated(), len(_csp.constraints)))
         return None if take_first else solutions
 
     @staticmethod
