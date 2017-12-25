@@ -126,6 +126,12 @@ class CSP(object):
         self.constraints = list(constraints)
         self.objective_fn = objective_fn
 
+    def reset(self):
+        """Unassigns all variables and re-initializes their domains."""
+        for var in self.var_list:
+            var.value = None
+            var.domain = copy.deepcopy(var.init_domain)
+
     def add_variable(self, var):
         """Adds a variable to the registry of the CSP."""
         self.var_list.append(var)
