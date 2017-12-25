@@ -73,8 +73,4 @@ soln = csp.get_solution(algorithm='min_conflicts')
 ```
 
 #### Sudoku
-As a toy example, we will solve [this game](examples/sudoku.png).
-```python
-from cspy import *
-# TODO
-```
+The code given [here](https://github.com/ohjay/cspy/blob/master/examples/sudoku_6x6.py) will solve [this game](examples/sudoku_6x6.png).

@@ -7,8 +7,8 @@ Sudoku solver (`CSPy` usage example).
 Solves https://github.com/ohjay/cspy/blob/master/examples/sudoku.png.
 """
 
-import numpy as np
 from cspy import Variable, Constraint, CSP
+from cspy.utils import merge_dicts
 
 N = 9
 DOMAIN = tuple(range(1, N + 1))
@@ -32,7 +32,21 @@ def values(var_list):
     """Takes in a list of variables and returns a list of those variables' values."""
     return [v.value for v in var_list]
 
+def from_name(_str):
+    """Returns a (r, c) tuple from the '<row><col>' name string _STR."""
+    return int(_str) // (10 * (N // 10 + 1)), int(_str) % (10 * (N // 10 + 1))
+
+def print_grid(known_values, unknown_char='-'):
+    """Given a dictionary of known values, prints the grid."""
+    for r in range(N):
+        rowstr = ''
+        for c in range(N):
+            rowstr += str(known_values.get((r, c), unknown_char)) + ' '
+        print(rowstr)
+
 if __name__ == '__main__':
+    print('Solving this problem:')
+    print_grid(FIXED_VALUES)
     csp = CSP()
     for r in range(N):
         for c in range(N):
@@ -65,13 +79,6 @@ if __name__ == '__main__':
         csp.add_constraint(Constraint(box_positions, satisfied))
     solution = csp.get_solution(algorithm='backtracking')
     if solution is None:
-        print(solution)
-    else:
-        grid = np.zeros((N, N))
-        for r in range(N):
-            for c in range(N):
-                if (r, c) in FIXED_VALUES:
-                    grid[r, c] = FIXED_VALUES[(r, c)]
-                else:
-                    grid[r, c] = solution['%d%d' % (r, c)]
-        print(grid)
+        solution = {}
+    _solution = {from_name(k): v for k, v in solution.items()}
+    print_grid(merge_dicts(_solution, FIXED_VALUES))
