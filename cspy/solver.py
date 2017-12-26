@@ -42,7 +42,7 @@ class Solver(object):
     # BACKTRACKING SEARCH + UTILITIES #
     ###################################
 
-    def backtracking(self, take_first=True, verbose=False):
+    def backtracking(self, take_first=True, verbose=False, progress_freq=1e4):
         """Backtracking search with forward checking.
         Returns the solution (or, if TAKE_FIRST is False, the set of all solutions) to the CSP given by `self.csp`.
         If no solutions exist, returns False.
@@ -55,7 +55,12 @@ class Solver(object):
         for var in _csp.var_list:
             _domains[var.name] = self.order_domain(var, _csp)
 
+        info = {'i': 0}
         def _recursive_backtracking(_csp):
+            info['i'] += 1
+            if info['i'] % progress_freq == 0:
+                print('[iteration %s] %d/%d constraints violated'
+                      % (str(info['i']).rjust(9), _csp.num_constraints_violated(), len(_csp.constraints)))
             if verbose:
                 _csp.print_current_assignment()
             if _csp.all_variables_assigned():
