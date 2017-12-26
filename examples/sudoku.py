@@ -6,7 +6,7 @@ sudoku.py
 Sudoku solver (`CSPy` usage example).
 Solves https://github.com/ohjay/cspy/blob/master/examples/sudoku.png.
 
-From testing different Sudoku formulations, a tip for problem setup:
+From testing several different Sudoku formulations, a tip for problem setup:
 avoid many-variable constraints. Keep things pairwise if possible.
 """
 

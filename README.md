@@ -22,6 +22,8 @@ var_ts0 = Variable('teaching_slot_8am', {'Robin', 'Evan', 'Chris'})
 Meanwhile, each constraint is represented as a tuple of N variable names
 (note: the string names, not the actual variables!) and a _function_ which takes in those N variables
 and returns either True or False, depending on whether or not the constraint is satisfied.
+**Note:** constraint formulation makes a huge difference. Try to minimize the number of variables
+involved in each constraint.
 
 ```python
 from cspy import Constraint
@@ -36,6 +38,8 @@ by then calling `<NAME>(var_names, **kwargs)`. At the time of writing,
 supported constraint constructors (+ signatures) include
 
 - `uniqueness(var_names)`
+- `inequality(name0, name1)`
+- `inequality_unary(name, constant)`
 
 In the `CSPy` interface, all constructs are tied together through the `CSP` class.
 A `CSP` object represents a constraint satisfaction problem in full, and contains methods
