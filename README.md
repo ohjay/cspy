@@ -31,11 +31,9 @@ constraint0 = Constraint(('teaching_slot_8am',), lambda var_ts0: var_ts0 != 'Eva
 ```
 
 Constructors for common constraints, such as uniqueness (where no two variables can have the same value)
-have been predefined in `common_constraints`. Each constraint constructor takes in a list of variable names
-(and sometimes additional constraint-specific keyword args). Accordingly, once imported
-(via `from cspy.common_constraints import <NAME>`), one of these constructors can be used to create a constraint
-by then calling `<NAME>(var_names, **kwargs)`. At the time of writing,
-supported constraint constructors (+ signatures) include
+have been predefined in `common_constraints`. Each constraint constructor accepts its own arguments,
+generally involving a collection of variable names, and creates a constraint (sometimes multiple).
+At the time of writing, supported constraint constructors (+ signatures) include
 
 - `uniqueness(var_names)`
 - `inequality(name0, name1)`
